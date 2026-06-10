@@ -15,14 +15,15 @@ class RosbagRecorder(Node):
         super().__init__('rosbag_recorder')
         
         # Declare parameters (list of topics, topic types, and output path)
+        # Use non-empty default arrays so ROS 2 infers/accepts STRING_ARRAY correctly.
         self.declare_parameter(
             'topics',
-            [],
+            [''],
             ParameterDescriptor(type=ParameterType.PARAMETER_STRING_ARRAY)
         )
         self.declare_parameter(
             'topic_types',
-            [],
+            [''],
             ParameterDescriptor(type=ParameterType.PARAMETER_STRING_ARRAY)
         )
         self.declare_parameter('output_path', 'rosbag_data')
