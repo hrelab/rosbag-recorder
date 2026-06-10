@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import re
 from collections.abc import Iterable
 from dataclasses import fields, is_dataclass
@@ -103,23 +104,23 @@ def flatten_value(value: Any, prefix: str = '') -> dict[str, Any]:
     return {prefix: value}
 
 
-def rows_for_topic(reader: AnyReader, topic: str) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
+def rows_for_topic(reader: AnyReader, topic: str) -> list[tuple[int, str]]:
+    rows: list[tuple[int, str]] = []
     connections = [connection for connection in reader.connections if connection.topic == topic]
 
     for connection, timestamp, rawdata in reader.messages(connections=connections):
         msg = reader.deserialize(rawdata, connection.msgtype)
-        row = {'timestamp_ns': timestamp}
-        rows.append(row)
+        payload = flatten_value(msg)
+        rows.append((timestamp, json.dumps(payload, ensure_ascii=False)))
 
     return rows
 
 
-def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+def write_csv(path: Path, rows: list[tuple[int, str]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('w', newline='') as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=['timestamp_ns'], extrasaction='ignore')
-        writer.writeheader()
+        writer = csv.writer(csv_file)
+        writer.writerow(['timestamp_ns'])
         writer.writerows(rows)
 
 
