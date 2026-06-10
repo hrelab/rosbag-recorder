@@ -43,3 +43,11 @@ And follow with prompts. You can use hard-coded defaults (set in the section abo
 > ```bash
 > hre_interfaces/msg/Imu,hre_interfaces/msg/Orient
 > ```
+
+## How to Run `rosbag2csv`
+
+First, start the Docker container you are in, in the ros2_ws environment. Run the following command:
+
+```bash
+python3 src/rosbag_recorder/rosbag2csv.py
+```
