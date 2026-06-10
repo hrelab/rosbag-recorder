@@ -116,7 +116,7 @@ def should_include_column(column_name: str) -> bool:
 
 def rows_for_topic(reader: AnyReader, topic: str) -> tuple[list[dict[str, Any]], list[str]]:
     rows: list[dict[str, Any]] = []
-    columns = {'timestamp_ns'}
+    columns: list[str] = ['timestamp_ns']
     connections = [connection for connection in reader.connections if connection.topic == topic]
 
     for connection, timestamp, rawdata in reader.messages(connections=connections):
@@ -126,10 +126,11 @@ def rows_for_topic(reader: AnyReader, topic: str) -> tuple[list[dict[str, Any]],
             {key: value for key, value in flatten_value(msg).items() if should_include_column(key)}
         )
         rows.append(row)
-        columns.update(row.keys())
+        for column in row.keys():
+            if column not in columns:
+                columns.append(column)
 
-    ordered_columns = ['timestamp_ns'] + sorted(column for column in columns if column != 'timestamp_ns')
-    return rows, ordered_columns
+    return rows, columns
 
 
 def write_csv(path: Path, rows: list[dict[str, Any]], columns: list[str]) -> None:
