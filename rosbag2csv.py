@@ -3,28 +3,14 @@ from rosbags.dataframe import get_dataframe
 from rosbags.highlevel import AnyReader
 import pandas as pd
 from rosbags.typesys import Stores, get_typestore, get_types_from_msg
-import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--tag', default='tag1', help='Tag of rosbag to convert', required=True)
-parser.add_argument('--raw_dels', action='store_true', help='Raw Delsys topic')
-parser.add_argument('--raw_tele', action='store_true', help='Raw Telemed topic')
-parser.add_argument('--proc_emg', action='store_true', help='Processed EMG topic')
-parser.add_argument('--proc_imu', action='store_true', help='Processed IMU topic')
-parser.add_argument('--proc_smg', action='store_true', help='Processed SMG topic')
-args = parser.parse_args()
-
-rosbag_tag = args.tag
-bag_path = Path(f'./data/rosbag/rosbag-{rosbag_tag}/')
-# bag_path = Path(f'./data/rosbag/rosbag2_2026_03_11-10_02_11/')
-
+bag_path_template = './data/rosbag/rosbag-{}'
 msg_path = Path('../../delsys-listener/stretch_sim_interfaces/msg')
 
 typestore = get_typestore(Stores.ROS2_HUMBLE)
 
 raw_delsys_topic = '/raw_data/delsys'
 raw_telemed_topic = '/raw_data/telemed'
-
 proc_emg_topic = '/processed/emg'
 proc_imu_topic = '/processed/imu'
 proc_smg_topic = '/processed/smg'
@@ -39,6 +25,23 @@ for msg_file in msg_path.glob('*.msg'):
     msg_name = f'stretch_sim_interfaces/msg/{msg_file.stem}'
     typestore.register(get_types_from_msg(msg_text, msg_name))
 
+
+def ask_yes_no(prompt, default=True):
+    default_str = 'Y/n' if default else 'y/N'
+    answer = input(f'{prompt} [{default_str}] ').strip()
+    if not answer:
+        return default
+    return answer.lower() in ('y', 'yes')
+
+
+def ask_non_empty(prompt):
+    while True:
+        value = input(prompt).strip()
+        if value:
+            return value
+        print('Value cannot be empty. Please try again.')
+
+
 def expand_list_columns(df, cols):
     expanded_parts = []
     first_col = cols[0]
@@ -49,33 +52,64 @@ def expand_list_columns(df, cols):
             expanded_parts.append(df[col].apply(lambda x: x[i]).rename(f'{col}-{i+1}'))
 
     return pd.concat(expanded_parts, axis=1)
-def get_df(topic, cols):
+
+
+def get_df(topic, cols, bag_path):
     with AnyReader([bag_path], default_typestore=typestore) as reader:
         df = get_dataframe(reader, topic, cols)
         return expand_list_columns(df, cols)
 
+
+def save_csv(df, filename):
+    print(df.head())
+    df.to_csv(filename, index=False, header=True)
+
+
 if __name__ == '__main__':
-    if args.raw_dels:
-        delsys_df = get_df(raw_delsys_topic, delsys_cols)
-        print(delsys_df.head())
-        delsys_df.to_csv(f'data/csv/{rosbag_tag}_raw_delsys.csv', index=False, header=True)
+    rosbag_tag = ask_non_empty('Enter the rosbag tag/key to convert: ')
+    bag_path = Path(bag_path_template.format(rosbag_tag))
 
-    if args.raw_tele:
-        telemed_df = get_df(raw_telemed_topic, smg_cols)
-        print(telemed_df.head())
-        telemed_df.to_csv(f'data/csv/{rosbag_tag}_raw_telemed.csv', index=False, header=True)
+    if not bag_path.exists():
+        print(f'Bag path does not exist: {bag_path}')
+        raise SystemExit(1)
 
-    if args.proc_emg:
-        emg_df = get_df(proc_emg_topic, emg_cols)
-        print(emg_df.head())
-        emg_df.to_csv(f'data/csv/{rosbag_tag}_proc_emg.csv', index=False, header=True)
-        
-    if args.proc_imu:
-        imu_df = get_df(proc_imu_topic, imu_cols)
-        print(imu_df.head())
-        imu_df.to_csv(f'data/csv/{rosbag_tag}_proc_imu.csv', index=False, header=True)
+    use_default = ask_yes_no('Convert all default topics?', default=True)
 
-    if args.proc_smg:
-        smg_df = get_df(proc_smg_topic, smg_cols)
-        print(smg_df.head())
-        smg_df.to_csv(f'data/csv/{rosbag_tag}_proc_smg.csv', index=False, header=True)
+    convert_raw_dels = convert_raw_tele = convert_proc_emg = convert_proc_imu = convert_proc_smg = False
+
+    if use_default:
+        convert_raw_dels = True
+        convert_raw_tele = True
+        convert_proc_emg = True
+        convert_proc_imu = True
+        convert_proc_smg = True
+    else:
+        convert_raw_dels = ask_yes_no('Convert raw Delsys topic?', default=True)
+        convert_raw_tele = ask_yes_no('Convert raw Telemed topic?', default=True)
+        convert_proc_emg = ask_yes_no('Convert processed EMG topic?', default=True)
+        convert_proc_imu = ask_yes_no('Convert processed IMU topic?', default=True)
+        convert_proc_smg = ask_yes_no('Convert processed SMG topic?', default=True)
+
+    if not any((convert_raw_dels, convert_raw_tele, convert_proc_emg, convert_proc_imu, convert_proc_smg)):
+        print('No conversions selected. Exiting.')
+        raise SystemExit(0)
+
+    if convert_raw_dels:
+        delsys_df = get_df(raw_delsys_topic, delsys_cols, bag_path)
+        save_csv(delsys_df, f'data/csv/{rosbag_tag}_raw_delsys.csv')
+
+    if convert_raw_tele:
+        telemed_df = get_df(raw_telemed_topic, smg_cols, bag_path)
+        save_csv(telemed_df, f'data/csv/{rosbag_tag}_raw_telemed.csv')
+
+    if convert_proc_emg:
+        emg_df = get_df(proc_emg_topic, emg_cols, bag_path)
+        save_csv(emg_df, f'data/csv/{rosbag_tag}_proc_emg.csv')
+
+    if convert_proc_imu:
+        imu_df = get_df(proc_imu_topic, imu_cols, bag_path)
+        save_csv(imu_df, f'data/csv/{rosbag_tag}_proc_imu.csv')
+
+    if convert_proc_smg:
+        smg_df = get_df(proc_smg_topic, smg_cols, bag_path)
+        save_csv(smg_df, f'data/csv/{rosbag_tag}_proc_smg.csv')
