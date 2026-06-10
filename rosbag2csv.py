@@ -103,6 +103,16 @@ def flatten_value(value: Any, prefix: str = '') -> dict[str, Any]:
     return {prefix: value}
 
 
+def should_include_column(column_name: str) -> bool:
+    if column_name == 'timestamp_ns':
+        return True
+    if column_name == '__msgType__':
+        return False
+    if column_name == 'header' or column_name.startswith('header.'):
+        return False
+    return True
+
+
 def rows_for_topic(reader: AnyReader, topic: str) -> tuple[list[dict[str, Any]], list[str]]:
     rows: list[dict[str, Any]] = []
     columns = {'timestamp_ns'}
@@ -111,7 +121,9 @@ def rows_for_topic(reader: AnyReader, topic: str) -> tuple[list[dict[str, Any]],
     for connection, timestamp, rawdata in reader.messages(connections=connections):
         msg = reader.deserialize(rawdata, connection.msgtype)
         row = {'timestamp_ns': timestamp}
-        row.update(flatten_value(msg))
+        row.update(
+            {key: value for key, value in flatten_value(msg).items() if should_include_column(key)}
+        )
         rows.append(row)
         columns.update(row.keys())
 
