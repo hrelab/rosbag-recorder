@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.serialization import serialize_message
+from rclpy.parameter import ParameterDescriptor, ParameterType
 import rosbag2_py
 # from std_msgs.msg import String
 from rosbag2_py import StorageOptions, ConverterOptions
@@ -14,8 +15,16 @@ class RosbagRecorder(Node):
         super().__init__('rosbag_recorder')
         
         # Declare parameters (list of topics, topic types, and output path)
-        self.declare_parameter('topics', [])
-        self.declare_parameter('topic_types', [])
+        self.declare_parameter(
+            'topics',
+            [],
+            ParameterDescriptor(type=ParameterType.STRING_ARRAY)
+        )
+        self.declare_parameter(
+            'topic_types',
+            [],
+            ParameterDescriptor(type=ParameterType.STRING_ARRAY)
+        )
         self.declare_parameter('output_path', 'rosbag_data')
         
 
