@@ -106,7 +106,8 @@ def flatten_value(value: Any, prefix: str = '') -> dict[str, Any]:
 def should_include_column(column_name: str) -> bool:
     if column_name == 'timestamp_ns':
         return True
-    if column_name == '__msgType__':
+    lower_name = column_name.lower()
+    if '__msg' in lower_name:
         return False
     if column_name == 'header' or column_name.startswith('header.'):
         return False
