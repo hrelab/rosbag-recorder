@@ -25,21 +25,21 @@ bash src/rosbag_recorder/run-recorder.bash
 And follow with prompts. You can use hard-coded defaults (set in the section above) or input the wanted topics each time. For example:
 
 > "Enter a tag or key to identify this rosbag:"
-```bash
-test1
-```
+> ```bash
+> test1
+> ```
 
 > "Use default topics? [Y/n]"
-```bash
-n
-```
+> ```bash
+> n
+> ```
 
 > "Enter topics as a comma-separated list, e.g. /topic1,/topic2:"
-```bash
-/raw_data/imu,/processed/imu
-```
+> ```bash
+> /raw_data/imu,/processed/imu
+> ```
 
 > "Enter matching topic types as a comma-separated list, e.g. package/msg/Type1,package/msg/Type2:"
-```bash
-hre_interfaces/msg/Imu,hre_interfaces/msg/Orient
-```
+> ```bash
+> hre_interfaces/msg/Imu,hre_interfaces/msg/Orient
+> ```
