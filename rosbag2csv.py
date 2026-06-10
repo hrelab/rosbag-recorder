@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import argparse
 import csv
 import re
 from collections.abc import Iterable
@@ -104,37 +103,31 @@ def flatten_value(value: Any, prefix: str = '') -> dict[str, Any]:
     return {prefix: value}
 
 
-def rows_for_topic(reader: AnyReader, topic: str) -> tuple[list[dict[str, Any]], list[str]]:
+def rows_for_topic(reader: AnyReader, topic: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    columns = {'timestamp_ns'}
     connections = [connection for connection in reader.connections if connection.topic == topic]
 
     for connection, timestamp, rawdata in reader.messages(connections=connections):
         msg = reader.deserialize(rawdata, connection.msgtype)
         row = {'timestamp_ns': timestamp}
-        row.update(flatten_value(msg))
         rows.append(row)
-        columns.update(row.keys())
 
-    ordered_columns = ['timestamp_ns'] + sorted(column for column in columns if column != 'timestamp_ns')
-    return rows, ordered_columns
+    return rows
 
 
-def write_csv(path: Path, rows: list[dict[str, Any]], columns: list[str]) -> None:
+def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('w', newline='') as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=columns, extrasaction='ignore')
+        writer = csv.DictWriter(csv_file, fieldnames=['timestamp_ns'], extrasaction='ignore')
         writer.writeheader()
         writer.writerows(rows)
 
 
-def convert_bag(bag_path: Path, output_dir: Path, topic_filter: set[str] | None = None) -> None:
+def convert_bag(bag_path: Path, output_dir: Path) -> None:
     typestore = build_typestore()
 
     with AnyReader([bag_path], default_typestore=typestore) as reader:
         topics = sorted({connection.topic for connection in reader.connections})
-        if topic_filter:
-            topics = [topic for topic in topics if topic in topic_filter]
 
         if not topics:
             print('No matching topics found.')
@@ -142,46 +135,21 @@ def convert_bag(bag_path: Path, output_dir: Path, topic_filter: set[str] | None 
 
         bag_output_dir = output_dir / bag_path.name
         for topic in topics:
-            rows, columns = rows_for_topic(reader, topic)
+            rows = rows_for_topic(reader, topic)
             csv_path = bag_output_dir / f'{sanitize_topic_name(topic)}.csv'
-            write_csv(csv_path, rows, columns)
+            write_csv(csv_path, rows)
             print(f'Wrote {len(rows)} rows: {csv_path}')
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description='Convert a ROS 2 bag to one CSV per topic using message introspection.',
-    )
-    parser.add_argument(
-        'bag',
-        nargs='?',
-        help='Bag directory, bag name under data/rosbag, or omitted to use the newest bag found.',
-    )
-    parser.add_argument(
-        '-o',
-        '--output-dir',
-        type=Path,
-        default=DEFAULT_OUTPUT_DIR,
-        help='Directory where CSV files will be written. Default: data/csv',
-    )
-    parser.add_argument(
-        '-t',
-        '--topic',
-        action='append',
-        dest='topics',
-        help='Topic to convert. May be provided more than once. Default: all topics.',
-    )
-    return parser.parse_args()
-
-
 def main() -> None:
-    args = parse_args()
-    bag_path = find_bag_path(args.bag)
-    output_dir = args.output_dir.expanduser()
-    topic_filter = set(args.topics) if args.topics else None
+    bag_name = input(
+        'Enter bag directory or bag name under data/rosbag (leave blank to use newest): '
+    ).strip() or None
+    bag_path = find_bag_path(bag_name)
+    output_dir = DEFAULT_OUTPUT_DIR.expanduser()
 
     print(f'Converting bag: {bag_path}')
-    convert_bag(bag_path, output_dir, topic_filter)
+    convert_bag(bag_path, output_dir)
 
 
 if __name__ == '__main__':
