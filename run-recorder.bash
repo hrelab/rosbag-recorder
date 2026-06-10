@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DEFAULT_TOPICS="[ '/processed/emg', '/processed/imu', '/processed/smg', '/raw_data/delsys', '/raw_data/telemed' ]"
-DEFAULT_TOPIC_TYPES="[ 'stretch_sim_interfaces/msg/EmgMsg', 'stretch_sim_interfaces/msg/ImuMsg', 'stretch_sim_interfaces/msg/SmgMsg', 'stretch_sim_interfaces/msg/DelsysMsg', 'stretch_sim_interfaces/msg/SmgMsg' ]"
+DEFAULT_TOPIC_TYPES="[ 'hre_interfaces/msg/Emg', 'hre_interfaces/msg/Imu', 'hre_interfaces/msg/Smg', 'hre_interfaces/msg/Delsys', 'hre_interfaces/msg/Smg' ]"
 
 while true; do
   echo "Enter a tag or key to identify this rosbag:"
