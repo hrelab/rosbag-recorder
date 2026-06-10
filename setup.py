@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'record_rosbag = rosbag_recorder.record_rosbag:main',
         ],
     },
 )
