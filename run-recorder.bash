@@ -198,7 +198,7 @@ main() {
   ros2 run rosbag_recorder record_rosbag --ros-args \
     -p topics:="$topics_param" \
     -p topic_types:="$types_param" \
-    -p output_path:"./data/rosbag/rosbag-${tag}"
+    -p output_path:="./data/rosbag/rosbag-${tag}"
 }
 
 main "$@"
