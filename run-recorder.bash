@@ -2,7 +2,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEFAULT_YAML_FILE="$SCRIPT_DIR/topics.yaml"
+ROS2_WS_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+DEFAULT_YAML_FILE="$ROS2_WS_DIR/topics.yaml"
 
 prompt_non_empty() {
   local prompt="$1"
