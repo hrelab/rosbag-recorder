@@ -1,7 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-DEFAULT_YAML_FILE="topics.yaml"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_YAML_FILE="$SCRIPT_DIR/topics.yaml"
+TTY="/dev/tty"
+if [[ ! -e "$TTY" ]]; then
+  TTY="/dev/stdin"
+fi
 
 prompt_non_empty() {
   local prompt="$1"
@@ -9,7 +14,7 @@ prompt_non_empty() {
 
   while true; do
     echo "$prompt"
-    read -r value
+    read -r value <"$TTY"
     if [[ -n "$value" ]]; then
       printf '%s' "$value"
       return
@@ -130,7 +135,7 @@ main() {
   tag=$(prompt_non_empty "Enter a tag or key to identify this rosbag:")
 
   echo "Record all currently published topics from ROS? [Y/n]"
-  read -r use_default
+  read -r use_default <"$TTY"
 
   if is_yes "$use_default"; then
     if ! collect_ros_topics; then
@@ -141,7 +146,7 @@ main() {
     types_param=$(build_ros_param ROS_TYPES)
   else
     echo "Use a YAML file for topics and types? [Y/n]"
-    read -r use_yaml
+    read -r use_yaml <"$TTY"
 
     if is_yes "$use_yaml"; then
       yaml_file="$DEFAULT_YAML_FILE"
@@ -165,11 +170,11 @@ main() {
       local type_array
 
       echo "Enter topics as a comma-separated list, e.g. /topic1,/topic2:"
-      read -r topic_input
+      read -r topic_input <"$TTY"
       topic_input="${topic_input// /}"
 
       echo "Enter matching topic types as a comma-separated list, e.g. package/msg/Type1,package/msg/Type2:"
-      read -r type_input
+      read -r type_input <"$TTY"
       type_input="${type_input// /}"
 
       IFS=',' read -r -a topic_array <<< "$topic_input"
