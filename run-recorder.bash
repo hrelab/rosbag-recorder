@@ -9,13 +9,13 @@ prompt_non_empty() {
   local value
 
   while true; do
-    echo "$prompt"
+    echo "$prompt" >&2
     read -r value
     if [[ -n "$value" ]]; then
       printf '%s' "$value"
       return
     fi
-    echo "Value cannot be empty. Please try again."
+    echo "Value cannot be empty. Please try again." >&2
   done
 }
 
