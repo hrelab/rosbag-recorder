@@ -25,24 +25,43 @@ bash src/rosbag_recorder/run-recorder.bash
 And follow with prompts. You can use hard-coded defaults (set in the section above) or input the wanted topics each time. For example:
 
 > "Enter a tag or key to identify this rosbag:"
+>
 > ```bash
 > test1
 > ```
 
-> "Use default topics? [Y/n]"
+> "Record all currently published topics from ROS? [Y/n]"
+>
+> ```bash
+> n
+> ```
+
+> "Use a YAML file for topics and types? [Y/n]"
+>
 > ```bash
 > n
 > ```
 
 > "Enter topics as a comma-separated list, e.g. /topic1,/topic2:"
+>
 > ```bash
 > /raw_data/imu,/processed/imu
 > ```
 
 > "Enter matching topic types as a comma-separated list, e.g. package/msg/Type1,package/msg/Type2:"
+>
 > ```bash
 > hre_interfaces/msg/Imu,hre_interfaces/msg/Orient
 > ```
+
+### YAML Option
+
+If you choose to run with a YAML file (option 2), then have the YAML file named `topics.yaml` and put it in the `ros2_ws` folder, alongside the `src/` folder. The format of the file is such:
+
+```YAML
+topics: [ '/raw_data/imu', '/processed/imu' ]
+topic_types: [ 'hre_interfaces/msg/Imu', 'hre_interfaces/msg/Orient' ]
+```
 
 ## How to Run `rosbag2csv`
 
