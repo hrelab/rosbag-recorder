@@ -57,6 +57,8 @@ parse_yaml_list() {
   for raw_item in "${raw_items[@]}"; do
     cleaned="${raw_item##+([[:space:]])}"
     cleaned="${cleaned%%+([[:space:]])}"
+    cleaned="${cleaned#\"}"
+    cleaned="${cleaned%\"}"
     cleaned="${cleaned#\'}"
     cleaned="${cleaned%\'}"
     if [[ -n "$cleaned" ]]; then
